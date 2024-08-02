@@ -6,14 +6,18 @@ import { GET_PRODUCT_BY_ID } from '@/utils/gql/GQL_QUERIES';
 import Image from 'next/image';
 // import { useDispatch } from 'react-redux';
 import { addFabric, addLiningFabric } from '@/redux/reducers/fabricSlice';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { setProductID } from '@/redux/reducers/productSlice';
+import { AppDispatch, RootState } from '@/redux/store';
 const SingleFabricDescriptionPage = ({ params }: { params: { id: string } }) => {
-  // Fetching slug parameter from URL
-  //   const searchParams = useSearchParams();
-  //   const slug = searchParams.get('id');
-  // console.log(slug);
-  const dispatch = useDispatch();
+  const isLiningFabric = /LF|lf/.test(params.id);
+  console.log(isLiningFabric)
+  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const reduxProductID = useSelector((state: RootState) => state.productID);
+  const { productID } = reduxProductID
+
+  console.log(productID, "reduxProductID");
   console.log(params.id)
   // Fetching data based on the slug using useQuery hook
   const { loading, error, data } = useQuery(GET_PRODUCT_BY_ID, {
@@ -45,7 +49,6 @@ const SingleFabricDescriptionPage = ({ params }: { params: { id: string } }) => 
   console.log(data)
   // Assuming your data structure, you can access the product details from data.product
   const product = data?.product; // Adjust according to your actual data structure
-
   const handleAddFabric = () => {
     if (product) {
       const fabricToAdd = {
@@ -54,20 +57,11 @@ const SingleFabricDescriptionPage = ({ params }: { params: { id: string } }) => 
         price: product.price,
         image: product.image.sourceUrl,
       };
-const productID=localStorage.getItem(`productID`);
-console.log(productID);
-      // Dispatch the action to add the fabric
-      dispatch(addFabric(fabricToAdd));
 
-      // Get existing fabrics from local storage or initialize an empty array
-      const existingFabrics = localStorage.getItem('selectedFabrics');
-      const fabricsArray = existingFabrics ? JSON.parse(existingFabrics) : [];
+      // Store the fabric with a key that includes the product ID
+      const fabricKey = `fabric_${productID}`;
+      localStorage.setItem(fabricKey, JSON.stringify(fabricToAdd));
 
-      // Add the new fabric to the existing array
-      fabricsArray.push(fabricToAdd);
-
-      // Save the updated fabrics array back to local storage
-      localStorage.setItem('selectedFabrics', JSON.stringify(fabricsArray));
       router.back();
     }
   };
@@ -80,14 +74,10 @@ console.log(productID);
         image: product.image.sourceUrl,
       };
 
-      // Dispatch the action to add the lining fabric
-      dispatch(addLiningFabric(liningFabricToAdd));
 
-      // Get existing lining fabrics from local storage or initialize an empty array
-      const existingLiningFabrics = localStorage.getItem('selectedLiningFabrics');
-      const liningFabricsArray = existingLiningFabrics ? JSON.parse(existingLiningFabrics) : [];
-      liningFabricsArray.push(liningFabricToAdd);
-      localStorage.setItem('selectedLiningFabrics', JSON.stringify(liningFabricsArray));
+
+      const fabricKey = `Liningfabric_${productID}`;
+      localStorage.setItem(fabricKey, JSON.stringify(liningFabricToAdd));
 
       // Navigate back to the previous page
       router.back();
@@ -118,22 +108,23 @@ console.log(productID);
 
             {/* Render other product details as needed */}
           </div>
-          <div className='flex justify-center mb-8'>
+          {!isLiningFabric && (<div className='flex justify-center mb-8'>
             <button
               onClick={handleAddFabric}
               className="cursor-pointer text-white font-bold shadow-md hover:scale-[1.2] shadow-purple-400 rounded-full px-5 py-2 bg-gradient-to-bl from-[#F97794] to-[#623AA2]"
             >
               Add as Main Fabric
             </button>
-          </div>
-          <div className='flex justify-center mb-8'>
+          </div>)}
+          {isLiningFabric && (<div className='flex justify-center mb-8'>
             <button
               onClick={handleAddLiningFabric}
               className="cursor-pointer text-white font-bold shadow-md hover:scale-[1.2] shadow-purple-400 rounded-full px-5 py-2 bg-gradient-to-bl from-[#F97794] to-[#623AA2]"
             >
               Add as Lining Fabric
             </button>
-          </div>
+          </div>)
+          }
         </div>
       </div>
       {/* Render other product details as needed */}

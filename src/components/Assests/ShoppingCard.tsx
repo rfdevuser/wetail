@@ -10,7 +10,7 @@ interface ShoppingCardProps {
 }
 
 const ShoppingCard: React.FC<ShoppingCardProps> = ({ name, price, image }) => {
-  const displayName = name;
+  const displayName = name.split('-')[0];
   console.log(displayName)
   return (
     <Link href={`/SingleBlouseDescriptionPage?id=${name}`} as={`/SingleBlouseDescriptionPage/${name}`}>

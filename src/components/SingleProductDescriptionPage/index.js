@@ -11,18 +11,45 @@ import { GET_FABRIC_PRODUCTS } from '@/utils/gql/GQL_QUERIES';
 import { useQuery } from '@apollo/client';
 import FabricCard from '../Assests/FabricCard';
 import Link from 'next/link';
-import Cookies from 'js-cookie';
+
 import { useDispatch, useSelector } from 'react-redux';
 import BlousePriceCalTable from '@/components/Assests/BlousePriceCalTable';
+import { setProductID } from '@/redux/reducers/productSlice';
+
+
+
+
+const useLocalStorage = (key, initialValue) => {
+  const [value, setValue] = useState(() => {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : initialValue;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+
+  return [value, setValue];
+};
 const SingleProductDescriptionPage = ({ products }) => {
+  const dispatch = useDispatch();
 
   // Check if products is undefined or in pending state
   if (!products) {
     return <div>Loading...</div>;
     // You can customize the loading state as per your UI/UX requirements
   }
-  const productID = products.id;
-
+  const productID = products.name;
+  console.log(products,'prodId')
+  // 
+  const reduxProductID = useSelector((state) => state.productID);
+  console.log(reduxProductID,'prodId')
+  useEffect(() => {
+    if (reduxProductID === null || reduxProductID !== productID) {
+      dispatch(setProductID(productID));
+    }
+  }, [productID, reduxProductID, dispatch]);
+  
   // console.log(productID);
   const queryVariables = {
     firstt: 5,
@@ -44,7 +71,7 @@ const SingleProductDescriptionPage = ({ products }) => {
   const { loading: loading2, error: error2, data: data2, fetchMore: fetchMore2 } = useQuery(GET_FABRIC_PRODUCTS, {
     variables: queryVariables2,
   });
-  console.log(data2,"data2");
+  // console.log(data2,"data2");
   // Destructure necessary properties from products
   const { image, galleryImages } = products;
 
@@ -52,8 +79,8 @@ const SingleProductDescriptionPage = ({ products }) => {
   const [selectedImage, setSelectedImage] = useState(image.sourceUrl);
 
   // State to manage selected size and its prices
-  const [localSelectedFabric, setLocalSelectedFabric] = useState(0);
-  const [localSelectedLinigFabric, setLocalSelectedLiningFabric] = useState(0);
+  const [localSelectedFabric, setLocalSelectedFabric] = useLocalStorage(`fabric_${products.name}`, null);
+  const [localSelectedLinigFabric, setLocalSelectedLiningFabric] = useLocalStorage(`Liningfabric_${products.name}`, null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedPrice, setSelectedPrice] = useState(0);
   const [selectedRegularPrice, setSelectedRegularPrice] = useState(null);
@@ -66,25 +93,8 @@ const SingleProductDescriptionPage = ({ products }) => {
   const handleImageClick = (imageUrl) => {
     setSelectedImage(imageUrl);
   };
-  useEffect(() => {
-    setFlagForExtra(false);
-  }, []);
-  useEffect(() => {
-    const fabricFromLocalStorage = localStorage.getItem(`selectedFabrics`);
-    if (fabricFromLocalStorage) {
-      const fabrics = JSON.parse(fabricFromLocalStorage);
-      setLocalSelectedFabric(fabrics[fabrics.length - 1]);
-    }
-  }, [productID]); // Added productID as dependency
-  
-  useEffect(() => {
-    const LiningfabricFromLocalStorage = localStorage.getItem(`selectedLiningFabrics`);
-    if (LiningfabricFromLocalStorage) {
-      const Liningfabrics = JSON.parse(LiningfabricFromLocalStorage);
-      setLocalSelectedLiningFabric(Liningfabrics[Liningfabrics.length - 1]);
-    }
-  }, [productID]); // Added productID as dependency
-  
+ 
+
  
   useEffect(() => {
     const selectedBlouseSleevesItemFromStorage = localStorage.getItem(`selectedBlouseSleevesItem_${productID}`);
@@ -115,7 +125,6 @@ const SingleProductDescriptionPage = ({ products }) => {
   }, [productID]);
   // Handlers to update selected items and store in session storage
   const handleBlouseSleevesClick = (item) => {
-    const isSelected = selectedBlouseSleevesItem?.id === item.id;
   
  {
       // Select the item
@@ -492,3 +501,5 @@ const SingleProductDescriptionPage = ({ products }) => {
 };
 
 export default SingleProductDescriptionPage;
+
+
